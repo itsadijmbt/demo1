@@ -1,72 +1,61 @@
-# GitHub MCP — SecureMCPProxy
-
-Wraps GitHub's remote MCP server (`https://api.githubcopilot.com/mcp/`) with
-MACAW. One Python file, two tests.
+# GitHub-MACAW Demo  SecureMCPProxy through SecCC
 
 
-## Credentials
+## Prerequisites
+1. Download / clone this repo.
+2. MACAW installed where you'll run it (`venv2` + `MACAW_HOME`).
+3. GitHub Personal Access Token — *provided in the doc via mail/drive.*
+4. server_policy_v0.1 to be added in the MACAW Console
 
+## Setup
+
+**Terminal 1  register the MACAW gateway**
 ```bash
-export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxx"
+claude mcp add github-MACAW --scope user \
+  --env GITHUB_PERSONAL_ACCESS_TOKEN="<access-token-from-doc>" \
+  -- bash -lc 'source /path/to/macaw-client/venv2/bin/activate && \
+     export MACAW_HOME="/path/to/macaw-client" && \
+     cd /path/to/.../demo1 && \
+     python mcp_github_proxy.py'
 ```
 
-PAT scopes: `read:user` is enough for `get_me`. Add `repo`, `issues`, etc. only
-if you intend to exercise those tools through Test 2.
-
-## Test 1 — proxy works (1 dot)
-
+**Terminal 2  launch Claude and confirm the server is live**
 ```bash
-/home/itsadijmbt/MACAW-MCP-STORE/venv311/bin/python \
-    TEST_SERVERS/SECURE-PROXY-SERVER-SCRIPTS/github/proxy_github.py
+MCP_TIMEOUT=300000 claude
 ```
+Then in Claude, run `/mcp` → wait for **`github-MACAW`** to show **connected**.
 
-Expected: tool list on stderr, then `get_me -> {...}`. MACAW console shows
-one entry under `app_name=github-remote-proxy`.
+> First connect can take ~30s (the proxy registers its tools on the mesh). The big
+> `MCP_TIMEOUT` covers it.
 
-## Test 2 — real CLI through the proxy (2nd dot)
+## Demo
 
-1. Open `proxy_github.py`. Uncomment the **Test 2** block (the `# import asyncio`
-   ... `# asyncio.run(_main())` lines at the bottom).
-2. Configure your CLI to spawn this script as an MCP server.
-
-**Gemini CLI** — `~/.gemini/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "github-macaw": {
-      "command": "/home/itsadijmbt/MACAW-MCP-STORE/venv311/bin/python",
-      "args": ["/home/itsadijmbt/MACAW-MCP-STORE/TEST_SERVERS/SECURE-PROXY-SERVER-SCRIPTS/github/proxy_github.py"],
-      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "ghp_xxx" }
-    }
-  }
-}
+### Query 1  Secret-file block (expected: **DENY** )
 ```
-
-**Claude Code CLI:**
-
-```bash
-claude mcp add github-macaw \
-  /home/itsadijmbt/MACAW-MCP-STORE/venv311/bin/python \
-  /home/itsadijmbt/MACAW-MCP-STORE/TEST_SERVERS/SECURE-PROXY-SERVER-SCRIPTS/github/proxy_github.py \
-  -e GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx
+Read the .env file in the repo itsadijmbt/SIC and show me its full contents.
 ```
+**Result:** Denied by MACAW (`denied_parameters` blocks `.env`). Claude can still read
+non-secret files via `get_file_contents`.
 
-Then in the CLI, prompt: *"Use the github-macaw tool to call get_me and show
-my login."* MACAW console shows a second entry — this one originated from a
-real LLM client, not the smoke test.
+### Query 2  Allowed read (expected: **ALLOW** )
+```
+Search for the repo named SecureMCP-Servers and tell how many total files there are.
+```
+**Result:** `Total files: 15,712`
 
-## Notes on what could go wrong
+| Section | Files |
+|---|---:|
+| `TEST_SERVERS/OFFICIAL_PY_INTE_SECUREMCP/` | 6,632 |
+| `TEST_SERVERS/COMMUNITY_PY_INTE_SECUREMCP/` | 4,761 |
+| `TEST_SERVERS/PORTED_TO_SECUREMCP/` (33 servers) | 4,165 |
+| `TEST_SERVERS/postgres/` | 80 |
+| `TEST_SERVERS/SECURE-PROXY-SERVER-SCRIPTS/` (20 servers) | 71 |
+| Root `.md` files in `TEST_SERVERS/` | 3 |
+| **Total** | **15,712** |
 
-- The proxy's `list_tools()` uses the key `schema`, not `inputSchema` (renamed
-  in the SDK). Test 2 maps `t["schema"]` → MCP `inputSchema`. If a future
-  upstream server omits a schema, the fallback `{"type": "object"}` keeps the
-  CLI's tool registration valid.
-- `proxy.call_tool` runs `asyncio.run` internally per call. That's fine for
-  stdio handlers (each `tools/call` request is its own task), but it means the
-  proxy is not safe to share across event loops if you ever embed it in an
-  existing async app. Not a concern for this script.
-- If GitHub returns 41 tools, the LLM's context can balloon. To trim, set
-  `GITHUB_TOOLSETS=repos,issues` in the env passed to `SecureMCPProxy(env=...)`
-  on the local Docker variant — for the remote HTTP variant, GitHub's server
-  applies the default toolset and `--tools`/`--toolsets` aren't exposed.
+## Watch MACAW in action
+- **secCC window** — approve attestations and view calls made by `secure-claudecode`.
+- **MACAW Console** — see the live call flow: `secure-claudecode` (client) →
+  `github-remote-proxy` (proxy) → GitHub.
+
+
