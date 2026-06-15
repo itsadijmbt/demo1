@@ -6,6 +6,7 @@
 2. MACAW installed where you'll run it (`venv2` + `MACAW_HOME`).
 3. GitHub Personal Access Token — *provided in the doc via mail/drive.*
 4. server_policy_v0.1 to be added in the MACAW Console
+5. SecCC should be installed Globally(then it can intercept bash:~$ claude)
 
 ## Setup
 
