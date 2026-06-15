@@ -1,0 +1,98 @@
+{
+    "policy_id": "app:github-remote-proxy",
+    "version": "0.2.0",
+    "description": "GitHub MCP via SecureMCPProxy -- strict read-only + get_file_contents attestation (eval-order demo).",
+
+    "resources": [
+        "tool:github-remote-proxy/**"
+    ],
+
+    "denied_resources": [
+        "tool:github-remote-proxy/actions_run_trigger",
+
+        "tool:github-remote-proxy/create_or_update_file",
+        "tool:github-remote-proxy/delete_file",
+        "tool:github-remote-proxy/push_files",
+        "tool:github-remote-proxy/create_branch",
+
+        "tool:github-remote-proxy/merge_pull_request",
+        "tool:github-remote-proxy/update_pull_request_branch",
+
+        "tool:github-remote-proxy/create_repository",
+        "tool:github-remote-proxy/fork_repository",
+
+        "tool:github-remote-proxy/create_gist",
+        "tool:github-remote-proxy/update_gist",
+
+        "tool:github-remote-proxy/run_secret_scanning",
+        "tool:github-remote-proxy/get_secret_scanning_alert",
+        "tool:github-remote-proxy/list_secret_scanning_alerts",
+
+        "tool:github-remote-proxy/create_pull_request",
+        "tool:github-remote-proxy/create_pull_request_review",
+        "tool:github-remote-proxy/update_pull_request",
+        "tool:github-remote-proxy/update_pull_request_draft_state",
+        "tool:github-remote-proxy/add_pull_request_review_comment",
+        "tool:github-remote-proxy/add_reply_to_pull_request_comment",
+        "tool:github-remote-proxy/add_comment_to_pending_review",
+        "tool:github-remote-proxy/submit_pending_pull_request_review",
+        "tool:github-remote-proxy/delete_pending_pull_request_review",
+        "tool:github-remote-proxy/pull_request_review_write",
+        "tool:github-remote-proxy/resolve_review_thread",
+        "tool:github-remote-proxy/unresolve_review_thread",
+        "tool:github-remote-proxy/request_pull_request_reviewers",
+        "tool:github-remote-proxy/request_copilot_review",
+        "tool:github-remote-proxy/assign_copilot_to_issue",
+
+        "tool:github-remote-proxy/create_issue",
+        "tool:github-remote-proxy/add_issue_comment",
+        "tool:github-remote-proxy/issue_write",
+        "tool:github-remote-proxy/update_issue_labels",
+        "tool:github-remote-proxy/update_issue_type",
+        "tool:github-remote-proxy/set_issue_fields",
+        "tool:github-remote-proxy/add_sub_issue",
+        "tool:github-remote-proxy/remove_sub_issue",
+        "tool:github-remote-proxy/reprioritize_sub_issue",
+        "tool:github-remote-proxy/sub_issue_write",
+
+        "tool:github-remote-proxy/label_write",
+        "tool:github-remote-proxy/discussion_comment_write",
+        "tool:github-remote-proxy/projects_write",
+
+        "tool:github-remote-proxy/dismiss_notification",
+        "tool:github-remote-proxy/mark_all_notifications_read",
+        "tool:github-remote-proxy/manage_notification_subscription",
+        "tool:github-remote-proxy/manage_repository_notification_subscription",
+
+        "tool:github-remote-proxy/star_repository",
+        "tool:github-remote-proxy/unstar_repository"
+    ],
+
+    "attestations": [
+        "confirm_file_read::{ params.path MATCHES '*' }"
+        
+    ],
+
+    "constraints": {
+        "parameters": {
+            "tool:github-remote-proxy/issue_read": {
+                "method": { "type": "string", "allowed_values": ["get", "get_comments", "get_labels", "get_sub_issues"] }
+            },
+            "tool:github-remote-proxy/pull_request_read": {
+                "method": { "type": "string", "allowed_values": ["get", "get_check_runs", "get_comments", "get_diff", "get_files", "get_review_comments", "get_reviews", "get_status"] }
+            }
+        },
+        "denied_parameters": {
+            "tool:github-remote-proxy/get_file_contents": {
+                "path": ["*.env*", "*id_rsa*", "*.pem", "*.p12", "*.pfx", "*credentials*", "*.npmrc", "*.pypirc", "*secrets*"]
+            }
+        },
+        "attestations": {
+            "confirm_file_read": {
+                "approval_criteria": "role:manager",
+                "timeout": 300,
+                "one_time": true
+            }
+        }
+    }
+}
