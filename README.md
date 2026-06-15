@@ -54,8 +54,8 @@ Search for the repo named SecureMCP-Servers and tell how many total files there 
 | **Total** | **15,712** |
 
 ## Watch MACAW in action
-- **secCC window** — approve attestations and view calls made by `secure-claudecode`.
-- **MACAW Console** — see the live call flow: `secure-claudecode` (client) →
+- **secCC window**  approve attestations and view calls made by `secure-claudecode`.
+- **MACAW Console**  see the live call flow: `secure-claudecode` (client) →
   `github-remote-proxy` (proxy) → GitHub.
 
 
